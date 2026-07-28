@@ -614,10 +614,12 @@ server.tool(
         if (!args.tasks || args.tasks.length === 0)
           throw new Error("tasks array is required for batch_create action");
         // If tasks don't have cardId, fall back to top-level cardId
-        const batchTasks = args.tasks.map((t) => ({
-          ...t,
-          cardId: t.cardId || args.cardId,
-        })) as { cardId: string; name: string; position?: number }[];
+        const batchTasks = args.tasks.map(
+          (t: { cardId: string; name: string; position?: number }) => ({
+            ...t,
+            cardId: t.cardId || args.cardId,
+          }),
+        ) as { cardId: string; name: string; position?: number }[];
         if (batchTasks.some((t) => !t.cardId))
           throw new Error("Each task must have a cardId, or provide cardId at the top level");
         result = await tasks.batchCreateTasks({ tasks: batchTasks });
