@@ -13,12 +13,23 @@ npm run inspector                     # MCP protocol inspector for debugging too
 | File | Role |
 |---|---|
 | `index.ts` | Stdio transport — primary entry point (`dist/index.js`, declared in `bin`) |
-| `http-server.ts` | HTTP/SSE transport — used by Docker image and health checks |
+| `http-server.ts` | Streamable-HTTP transport (official MCP SDK) — used by Docker image and health checks. Bearer-token protected. |
+| `common/registerTools.ts` | Single source of truth for the 9 tool definitions; `registerTools(server)` is shared by both transports |
 | `operations/*.ts` | Low-level Planka API wrappers (boards, cards, lists, tasks, labels, comments, memberships, projects) |
 | `tools/*.ts` | Higher-level composite tools exported via `tools/index.ts` |
-| `common/utils.ts` | Shared HTTP client with Bearer-token auth; token cached globally per process |
+| `common/utils.ts` | Shared HTTP client with Bearer-token auth **to Planka**; token cached globally per process (unrelated to the MCP client token below) |
 
-The MCP server exposes 9 consolidated tools (e.g. `mcp_kanban_card_manager`) that multiplex actions via a Zod-validated `action` enum. Tool definitions are duplicated between `index.ts` and `http-server.ts` — keep them in sync when adding actions.
+The MCP server exposes 9 consolidated tools (e.g. `mcp_kanban_card_manager`) that multiplex actions via a Zod-validated `action` enum. Tool definitions live only in `common/registerTools.ts` — both `index.ts` and `http-server.ts` call `registerTools()`, so add new actions in one place.
+
+## HTTP transport & auth
+
+`http-server.ts` uses the SDK's `StreamableHTTPServerTransport` (stateful, session keyed by the `Mcp-Session-Id` header):
+- `POST /mcp` — JSON-RPC requests (`initialize` opens a session)
+- `GET /mcp` — server→client SSE stream for an established session
+- `DELETE /mcp` — end a session
+- `GET /health` — unauthenticated probe
+
+All `/mcp` requests require `Authorization: Bearer <PLANKA_MCP_TOKEN>`. **Closed by default**: if `PLANKA_MCP_TOKEN` is unset, `/mcp` rejects every request with 401. Clients (e.g. LibreChat) must use transport type **streamable-http** pointed at the full `/mcp` URL.
 
 ## Environment variables
 
@@ -26,6 +37,8 @@ Copy `.env` from `example.env`. Required at runtime:
 - `PLANKA_BASE_URL` — Planka API base (default `http://localhost:3000`)
 - `PLANKA_AGENT_EMAIL` / `PLANKA_AGENT_PASSWORD` — credentials for the MCP agent user
 - `PLANKA_ADMIN_EMAIL` or `PLANKA_ADMIN_USERNAME` — admin identity for membership operations
+- `PLANKA_MCP_TOKEN` — bearer token clients must present to the HTTP `/mcp` endpoint. **Required for the HTTP server**: if unset, `/mcp` is disabled. Not used by the stdio entry point.
+- `PLANKA_MCP_PORT` — HTTP server listen port (default `3008`)
 
 The `.env` file is gitignored. The docker-compose flow reads it via `--env-file .env`.
 
