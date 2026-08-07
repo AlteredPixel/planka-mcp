@@ -7,12 +7,13 @@ services:
     container_name: planka-mcp
     restart: unless-stopped
     ports:
-      - "${MCP_KANBAN_PORT:-3008}:3008"
+      - "${PLANKA_MCP_PORT:-3008}:3008"
     environment:
       - PLANKA_BASE_URL=${PLANKA_BASE_URL}
       - PLANKA_AGENT_EMAIL=${PLANKA_AGENT_EMAIL}
       - PLANKA_AGENT_PASSWORD=${PLANKA_AGENT_PASSWORD}
       - PLANKA_MCP_PORT=3008
+      - PLANKA_MCP_TOKEN=${PLANKA_MCP_TOKEN}
       - NODE_ENV=production
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3008/health"]
