@@ -198,8 +198,7 @@ server.tool(
           throw new Error(
             "id, name, and position are required for update action"
           );
-        const { id, ...updateOptions } = args;
-        result = await lists.updateList(id, {
+        result = await lists.updateList(args.id, {
           name: args.name,
           position: args.position,
         });

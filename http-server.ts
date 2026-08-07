@@ -147,11 +147,26 @@ app.post("/mcp", async (req: Request, res: Response) => {
 // DELETE /mcp — explicit session teardown.
 async function handleSessionRequest(req: Request, res: Response) {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
-  const transport = sessionId ? transports.get(sessionId) : undefined;
-  if (!transport) {
-    res.status(400).send("Invalid or missing session ID");
+
+  if (!sessionId) {
+    res.status(400).json({
+      jsonrpc: "2.0",
+      error: { code: -32000, message: "Bad Request: missing Mcp-Session-Id header." },
+      id: null,
+    });
     return;
   }
+
+  const transport = transports.get(sessionId);
+  if (!transport) {
+    res.status(404).json({
+      jsonrpc: "2.0",
+      error: { code: -32001, message: "Unknown or expired session ID." },
+      id: null,
+    });
+    return;
+  }
+
   await transport.handleRequest(req, res);
 }
 
