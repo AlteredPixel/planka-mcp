@@ -33,8 +33,8 @@
     "express": "^4.22.0",
     "node-fetch": "^3.3.2",
     "universal-user-agent": "^7.0.2",
-    "zod": "^3.22.4",
-    "zod-to-json-schema": "^3.23.5"
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
